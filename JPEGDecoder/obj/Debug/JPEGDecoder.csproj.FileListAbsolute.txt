@@ -1,0 +1,6 @@
+C:\Users\Kirito\Desktop\JpegDecoder\JPEGDecoder\JPEGDecoder\bin\Debug\JPEGDecoder.exe.config
+C:\Users\Kirito\Desktop\JpegDecoder\JPEGDecoder\JPEGDecoder\bin\Debug\JPEGDecoder.exe
+C:\Users\Kirito\Desktop\JpegDecoder\JPEGDecoder\JPEGDecoder\bin\Debug\JPEGDecoder.pdb
+C:\Users\Kirito\Desktop\JpegDecoder\JPEGDecoder\JPEGDecoder\obj\Debug\JPEGDecoder.csprojResolveAssemblyReference.cache
+C:\Users\Kirito\Desktop\JpegDecoder\JPEGDecoder\JPEGDecoder\obj\Debug\JPEGDecoder.exe
+C:\Users\Kirito\Desktop\JpegDecoder\JPEGDecoder\JPEGDecoder\obj\Debug\JPEGDecoder.pdb
