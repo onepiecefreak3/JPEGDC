@@ -33,26 +33,29 @@ namespace JPEGDecoder
 
                     bool decode = false;
 
-                    List<AppSpecifics> appSpecifics=new List<AppSpecifics>();
+                    List<AppSpecifics> appSpecifics = new List<AppSpecifics>();
                     string comment;
 
                     var quantTable = new List<byte[]>();
-                    var huffTable = new Dictionary<BitArray,int>[4];
+                    var huffTable = new Dictionary<BitArray, int>[4];
                     var scanDetails = new List<ScanDetails>();
 
                     var scanData = new List<byte[]>();
 
-                    ImageInfo imageInfo=null;
+                    ImageInfo imageInfo = null;
 
-                    while (br.BaseStream.Position<br.BaseStream.Length)
+                    Huffman.DCValuesInit();
+
+                    while (br.BaseStream.Position < br.BaseStream.Length)
                     {
                         ushort size;
-                        Huffman.DCValuesInit();
 
-                        switch (br.ReadUInt16())
+                        var code = br.ReadUInt16();
+                        switch (code)
                         {
                             //JPEG Image start
                             case 0xffd8:
+                                Console.WriteLine("JPEG Start");
                                 break;
                             //App Specifications
                             case 0xffe0:
@@ -71,16 +74,19 @@ namespace JPEGDecoder
                             case 0xffed:
                             case 0xffee:
                             case 0xffef:
+                                Console.WriteLine($"App specific data: 0x{code:X4}");
                                 size = br.ReadUInt16();
                                 appSpecifics.Add(new AppSpecifics(br.BaseStream));
                                 break;
-                            //comment
+                            //Comment
                             case 0xfffe:
                                 size = br.ReadUInt16();
                                 comment = br.ReadString(size - 2);
+                                Console.WriteLine($"Found comment: \"{comment}\"");
                                 break;
                             //Quantization tables
                             case 0xffdb:
+                                Console.WriteLine("Found Quantization table");
                                 size = br.ReadUInt16();
                                 for (int i = 0; i < (size - 2) / 0x40; i++)
                                 {
@@ -95,9 +101,11 @@ namespace JPEGDecoder
                             case 0xffc2:
                                 size = br.ReadUInt16();
                                 imageInfo = new ImageInfo(br.BaseStream);
+                                Console.WriteLine($"Type: {(code == 0xffc0 ? "Sequential" : "Progressive")}");
                                 break;
                             //Huffman Table
                             case 0xffc4:
+                                Console.WriteLine("Found Huffman table");
                                 long bk = br.BaseStream.Position;
                                 size = br.ReadUInt16();
                                 while (br.BaseStream.Position < bk + size)
@@ -109,7 +117,10 @@ namespace JPEGDecoder
                                     foreach (var part in bytes)
                                     {
                                         for (int i = 0; i < part; i++)
-                                            tmpDir.Add(br.ReadByte(), byteCount);
+                                        {
+                                            var value = br.ReadByte();
+                                            tmpDir.Add(value, byteCount);
+                                        }
                                         byteCount++;
                                     }
                                     huffTable[(id >> 4) * 2 + id & 0x0F] = Huffman.GetTree(tmpDir.OrderBy(e => e.Value).ToList());
@@ -121,20 +132,22 @@ namespace JPEGDecoder
                                 break;
                             //start of scan
                             case 0xffda:
+                                Console.WriteLine("Start of scan");
                                 size = br.ReadUInt16();
                                 scanDetails.Add(new ScanDetails(br.BaseStream));
                                 var byteTmp = new List<byte>();
 
                                 var tmp = br.ReadUInt16();
-                                while(tmp<=0xff00)
+                                while (tmp <= 0xff00)
                                 {
-                                    if (tmp==0xff00)
+                                    if (tmp == 0xff00)
                                     {
                                         byteTmp.Add(0xFF);
-                                    } else
+                                    }
+                                    else
                                     {
                                         br.BaseStream.Position -= 1;
-                                        byteTmp.Add((byte)(tmp>>8));
+                                        byteTmp.Add((byte)(tmp >> 8));
                                     }
 
                                     tmp = br.ReadUInt16();
@@ -150,6 +163,7 @@ namespace JPEGDecoder
                                 break;
                             //End of Image
                             case 0xffd9:
+                                Console.WriteLine("JPEG End");
                                 if (decode)
                                     Huffman.Decomp(scanData.Last(), scanDetails.Last(), huffTable);
                                 break;
@@ -206,15 +220,15 @@ namespace JPEGDecoder
                     Bitmap bmp = new Bitmap(imageInfo.nrOfSamples, imageInfo.nrOfLines);
 
                     int x = 0, y = 0;
-                    for (int i=0;i<Huffman.YBlocks.Count();i++)
+                    for (int i = 0; i < Huffman.YBlocks.Count(); i++)
                     {
-                        for (int j=0;j<8;j++)
+                        for (int j = 0; j < 8; j++)
                         {
                             for (int k = 0; k < 8; k++)
                             {
                                 var r = Huffman.YBlocks[i][j * 8 + k] + 1.402 * (Huffman.CrBlocks[i][j * 8 + k] - 128);
                                 var g = Huffman.YBlocks[i][j * 8 + k] - 0.344136 * (Huffman.CbBlocks[i][j * 8 + k] - 128) - 0.714136 * (Huffman.CrBlocks[i][j * 8 + k] - 128);
-                                var b = Huffman.YBlocks[i][j * 8 + k]+1.772 * (Huffman.CbBlocks[i][j * 8 + k] - 128);
+                                var b = Huffman.YBlocks[i][j * 8 + k] + 1.772 * (Huffman.CbBlocks[i][j * 8 + k] - 128);
                                 bmp.SetPixel(x + k, y + j, Color.FromArgb((int)Math.Round(r), (int)Math.Round(g), (int)Math.Round(b)));
                             }
                         }

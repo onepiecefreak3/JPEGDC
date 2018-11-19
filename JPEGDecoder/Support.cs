@@ -44,7 +44,8 @@ namespace JPEGDecoder
                 nrOfSamples = br.ReadInt16();
                 nrOfComp = br.ReadByte();
                 comps = new Component[nrOfComp];
-                for (int i = 0; i < nrOfComp; i++) comps[i] = br.ReadStruct<Component>();
+                for (int i = 0; i < nrOfComp; i++)
+                    comps[i] = br.ReadStruct<Component>();
             }
         }
 
